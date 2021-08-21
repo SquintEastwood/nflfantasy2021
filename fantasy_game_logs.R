@@ -266,7 +266,10 @@ mahomies <- dplyr::filter(data, season_type=='REG',
                    "Pass Ints"=sum(interception[passer_player_id==playerID],na.rm=TRUE),
                    "Rush Attempts"=sum(rush_attempt[rusher_player_id==playerID],na.rm=TRUE),
                    "Rush Yards"=sum(rushing_yards[rusher_player_id==playerID],na.rm=TRUE),
-                   "Rush TDs"=sum(rush_touchdown[td_player_id==playerID],na.rm=TRUE)
+                   "Rush TDs"=sum(rush_touchdown[td_player_id==playerID],na.rm=TRUE),
+                   "Receptions"=sum(complete_pass[receiver_player_id==playerID],na.rm=TRUE),
+                   "Receiving Yards"=sum(receiving_yards[receiver_player_id==playerID],na.rm=TRUE),
+                   "Receiving TDs"=sum(pass_touchdown[td_player_id==playerID],na.rm=TRUE),
                    )
   
 passyds <- dplyr::select(data, play_type) %>% 
