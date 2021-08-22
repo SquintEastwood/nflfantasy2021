@@ -236,6 +236,7 @@ mahomietest <- dplyr::filter(data, passer_player_id=='00-0033873'|
   dplyr::select(., week,
                 season,
                 season_type,
+                desc,
                 complete_pass,
                 passing_yards,
                 pass_touchdown,
@@ -247,7 +248,8 @@ mahomietest <- dplyr::filter(data, passer_player_id=='00-0033873'|
                 fumbled_1_player_id,
                 lateral_rusher_player_id,
                 rusher_player_id,
-                td_player_id
+                td_player_id,
+                lateral_rush
                 )
 
 
@@ -260,19 +262,43 @@ mahomies <- dplyr::filter(data, season_type=='REG',
                             td_player_id==playerID,
                             ) %>% 
   dplyr::group_by(., week) %>% 
-  dplyr::summarise("Pass Completions"=sum(complete_pass),
+  dplyr::summarise("Pass Completions"=sum(complete_pass[passer_player_id==playerID],na.rm=TRUE),
                    "Pass Yards"=sum(passing_yards[passer_player_id==playerID],na.rm=TRUE),
                    "Pass TDs"=sum(pass_touchdown,na.rm=TRUE),
                    "Pass Ints"=sum(interception[passer_player_id==playerID],na.rm=TRUE),
                    "Rush Attempts"=sum(rush_attempt[rusher_player_id==playerID],na.rm=TRUE),
-                   "Rush Yards"=sum(rushing_yards[rusher_player_id==playerID],na.rm=TRUE),
+                   "Rush Yards"=sum(rushing_yards[rusher_player_id==playerID & lateral_rush==0],na.rm=TRUE),
                    "Rush TDs"=sum(rush_touchdown[td_player_id==playerID],na.rm=TRUE),
+                   "Lateral Rush Attempts"=sum(lateral_rush[lateral_rusher_player_id==playerID],na.rm=TRUE),
+                   "Lateral Rush Yards"=sum(rushing_yards[lateral_rusher_player_id==playerID & lateral_rush==1],na.rm=TRUE),
+                   "Lateral Rush TD"=sum(touchdown[lateral_rusher_player_id==playerID & td_player_id==1],na.rm=TRUE),
                    "Receptions"=sum(complete_pass[receiver_player_id==playerID],na.rm=TRUE),
                    "Receiving Yards"=sum(receiving_yards[receiver_player_id==playerID],na.rm=TRUE),
                    "Receiving TDs"=sum(pass_touchdown[td_player_id==playerID],na.rm=TRUE),
+                   "Lateral Rec Attempts"=sum(lateral_reception[lateral_receiver_player_id==playerID],na.rm=TRUE),
+                   "Lateral Rec Yards"=sum(receiving_yards[lateral_receiver_player_id==playerID & lateral_reception==1],na.rm=TRUE),
+                   "Lateral Rec TD"=sum(touchdown[lateral_receiver_player_id==playerID & td_player_id==1],na.rm=TRUE),
+                   "Punt Return Yards"=sum(return_yards[punt_returner_player_id==playerID & punt_attempt==1],na.rm=TRUE),
+                   "Kickoff Return Yards"=sum(return_yards[kickoff_returner_player_id==playerID & kickoff_attempt==1],na.rm=TRUE),
+                   "Fumble Recovery TD"=sum(touchdown[fumble_recovery_1_player_id==playerID & td_player_id==playerID],na.rm=TRUE),
+                   "Fumble Lost"=sum(fumble_lost[fumbled_1_player_id==playerID],na.rm=TRUE),
+                   "2 Point Conversions"=sum(two_point_attempt[two_point_conv_result=='success' & (
+                     passer_player_id==playerID | rusher_player_id==playerID | receiver_player_id==playerID)],na.rm=TRUE)
+                   ) %>%
+  dplyr::transmute(.,
+                   "Pass Completions"=`Pass Completions`,
+                   "Pass Yards"=`Pass Yards`,
+                   "Pass TDs"=`Pass TDs`,
+                   "Pass Ints"=`Pass Ints`,
+                   "Rush Attempts"=`Rush Attempts`+`Lateral Rush Attempts`,
+                   "Rush Yards"=`Rush Yards`+`Lateral Rush Yards`,
+                   "Rush TDs"=`Rush TDs`+`Lateral Rush TD`,
+                   "Receptions"=`Receptions`+`Lateral Rec Attempts`,
+                   "Receiving Yards"=`Receiving Yards`+`Lateral Rec Yards`,
+                   "Receiving TDs"=`Receiving TDs`+`Lateral Rec TD`,
+                   "Punt Return Yards"=`Punt Return Yards`,
+                   "Kickoff Return Yards"=`Kickoff Return Yards`,
+                   "Fumble Recovery TD"=`Fumble Recovery TD`,
+                   "Fumble Lost"=`Fumble Lost`,
+                   "2 Point Conversions"=`2 Point Conversions`
                    )
-  
-passyds <- dplyr::select(data, play_type) %>% 
-  dplyr::distinct()
-
-
