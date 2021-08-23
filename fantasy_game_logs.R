@@ -2,9 +2,9 @@
 # Prep --------------------------------------------------------------------
 
 #install.packages("tidyverse")
-install.packages("ggrepel")
-install.packages("ggimage")
-install.packages("nflfastR")
+#install.packages("ggrepel")
+#install.packages("ggimage")
+#install.packages("nflfastR")
 
 library(tidyverse)
 library(ggrepel)
@@ -37,8 +37,6 @@ header <- dplyr::select(data,
                         touchdown,
                         week
 )
-
-
 
 team_names <- dplyr::select(data,home_team) %>% 
   dplyr::distinct(home_team)
@@ -96,6 +94,7 @@ players_list_kick <- c('kicker')
 players_kickers <- purrr::map_dfr(players_list_kick,fn_players) %>% 
   dplyr::distinct(player_id,.keep_all = TRUE)
 
+players_master_list <- dplyr::union(players_offense, players_defense, players_kickers) 
 
 # Game Logs ---------------------------------------------------------------
 
@@ -234,6 +233,7 @@ fn_gameLogKicks <- function(playerID){
                      "FG Made 50+"=sum(KIK[kicker_player_id==playerID & kick_distance>=50],na.rm=TRUE),
     ) %>%
     dplyr::transmute(.,"Week"=week,
+                     "Player ID"=playerID,
                      "PAT Made"=`PAT Made`,
                      "FG Made 0-19"=`FG Made 0-19`,
                      "FG Made 20-29"=`FG Made 20-29`,
@@ -248,3 +248,24 @@ gameLogsOffense <- purrr::map_dfr(players_offense$player_id,fn_gameLogOffense)
 gameLogsDefense <- purrr::map_dfr(players_defense$player_id,fn_gameLogDefense)
 
 gameLogsKicks <- purrr::map_dfr(players_kickers$player_id,fn_gameLogKicks)
+
+
+# Scoring Models ----------------------------------------------------------
+
+modelOffense <- tribble(
+                        ~Stat, ~Modifier, 
+                        "Passing Completions",    .1, 
+                        "Passing Yards",          .02,
+                        "Passing Touchdowns",     4,
+                        "Interceptions Thrown",   -2,
+                        "Rushing Attempts",       .1,
+                        "Rushing Yards",          1/8,
+                        "Rushing Touchdowns",     6,
+                        "Receptions",             2,
+                        "Receiving Yards",        .02,
+                        "Receiving Touchdowns",   5.5,
+                        "Return Yards",           1/25,
+                        "Recovered Fumble TD",    6,
+                        "2Point Conversions",     2,
+                        "Fumbles Lost",           -3
+)
